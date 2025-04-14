@@ -41,6 +41,18 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'user', 'product', 'rating', 'comment', 'created_at']
 
+    def validate(self, data):
+        user = self.context['request'].user
+        product = data['product']
+
+        # Если это обновление, исключаем текущий объект
+        qs = Review.objects.filter(user=user, product=product)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError("Вы уже оставили отзыв.")
+        return data
 
 class FavoriteSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -49,6 +61,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ['id', 'user', 'product']
 
+    def validate(self, data):
+        user = self.context['request'].user
+        if Favorite.objects.filter(user=user, product=data['product']).exists():
+            raise serializers.ValidationError("Уже в избранном.")
+        return data
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:

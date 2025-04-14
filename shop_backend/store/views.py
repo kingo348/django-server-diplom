@@ -4,12 +4,13 @@ from rest_framework.response import Response
 from .models import Product, Category, Order, OrderItem, Address, Review, Favorite
 from .serializers import (
     ProductSerializer, CategorySerializer, OrderSerializer,
-    AddressSerializer, ReviewSerializer, FavoriteSerializer
+    AddressSerializer, ReviewSerializer, FavoriteSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.exceptions import PermissionDenied
 
 #  Товары
 class ProductListView(generics.ListAPIView):
@@ -50,6 +51,22 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        # Можно добавить проверку на владельца
+        instance.delete
+
+    def perform_destroy(self, instance):
+        if instance.user != self.request.user:
+            raise PermissionDenied("Вы не можете удалить этот отзыв.")
+        instance.delete()
 
 #  Избранное
 class FavoriteListCreateView(generics.ListCreateAPIView):

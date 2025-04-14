@@ -4,7 +4,7 @@ from .views import (
     ReviewListCreateView,
     FavoriteListCreateView, FavoriteDeleteView,
     OrderCreateView, OrderListView,
-    AddressListCreateView
+    AddressListCreateView,ReviewDetailView
 )
 
 urlpatterns = [
@@ -18,6 +18,6 @@ urlpatterns = [
 
     path('orders/create/', OrderCreateView.as_view(), name='order-create'),
     path('orders/', OrderListView.as_view(), name='order-list'),
-
+    path('reviews/<int:pk>/', ReviewDetailView.as_view(), name='review-detail'),
     path('addresses/', AddressListCreateView.as_view(), name='address-list-create'),
 ]
