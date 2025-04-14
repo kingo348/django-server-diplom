@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
+from .permissions import IsOwnerOrReadOnly
 
 #  Товары
 class ProductListView(generics.ListAPIView):
@@ -54,19 +55,11 @@ class ReviewListCreateView(generics.ListCreateAPIView):
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
 
-    def perform_destroy(self, instance):
-        # Можно добавить проверку на владельца
-        instance.delete
-
-    def perform_destroy(self, instance):
-        if instance.user != self.request.user:
-            raise PermissionDenied("Вы не можете удалить этот отзыв.")
-        instance.delete()
 
 #  Избранное
 class FavoriteListCreateView(generics.ListCreateAPIView):
@@ -82,7 +75,7 @@ class FavoriteListCreateView(generics.ListCreateAPIView):
 
 class FavoriteDeleteView(generics.DestroyAPIView):
     serializer_class = FavoriteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
     lookup_field = 'product_id'
 
     def get_queryset(self):
@@ -97,16 +90,15 @@ class OrderCreateView(generics.CreateAPIView):
 
 class OrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
 
 
-#  Адреса
 class AddressListCreateView(generics.ListCreateAPIView):
     serializer_class = AddressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         return Address.objects.filter(user=self.request.user)
