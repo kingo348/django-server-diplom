@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* В файле App.css или index.css */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f7fafc;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  text-align: center;
+  font-size: 2rem;
+  color: #333;
+}
+
+button {
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #3182ce;
+}
+
+img {
+  border-radius: 8px;
+}
+
+.grid {
+  display: grid;
+}
