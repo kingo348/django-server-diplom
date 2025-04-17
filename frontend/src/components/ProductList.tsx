@@ -1,52 +1,100 @@
 import React, { useState, useEffect } from 'react';
-import ProductCard from './ProductCard';
 import axios from 'axios';
+import ProductCard from './ProductCard';
+import './styles/productList.css';
 
-const ProductList: React.FC = () => {
-  const [products, setProducts] = useState<any[]>([]); // Массив товаров
+type ProductListProps = {
+  selectedCategory: number | null;
+  page: number;
+  setPage: React.Dispatch<React.SetStateAction<number>>;
+};
+
+const pageSize = 10; 
+
+const ProductList: React.FC<ProductListProps> = ({ selectedCategory, page, setPage }) => {
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [page, setPage] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [orderBy, setOrderBy] = useState<string>('price');
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8000/api/products?page=${page}`);
+      const params: any = {
+        page,
+        ordering: orderBy,
+      };
+      if (selectedCategory !== null) params.category = selectedCategory;
+      if (searchTerm.trim() !== '') params.search = searchTerm;
+
+      const response = await axios.get('http://localhost:8000/api/products', { params });
       setProducts(response.data.results);
-      setLoading(false);
+      setTotalCount(response.data.count);
     } catch (error) {
-      console.error('Failed to load products', error);
+      console.error('Ошибка при загрузке товаров:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchProducts();
-  }, [page]);
+  }, [page, searchTerm, orderBy, selectedCategory]);
 
-  if (loading) {
-    return <div className="text-center py-8">Загрузка...</div>;
-  }
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Товары</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} name={product.name} price={product.price} image={product.image} />
-        ))}
+    <div className="product-list">
+      {/* Поиск и сортировка */}
+      <div className="filters">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1); 
+          }}
+          placeholder="Поиск товаров"
+        />
+        <select
+          value={orderBy}
+          onChange={(e) => setOrderBy(e.target.value)}
+        >
+          <option value="price">Сначала дешёвые</option>
+          <option value="-price">Сначала дорогие</option>
+          <option value="name">По названию A-Z</option>
+          <option value="-name">По названию Z-A</option>
+        </select>
       </div>
-      <div className="flex justify-center mt-6">
+
+      {/* Товары */}
+      {loading ? (
+        <div className="text-center">Загрузка...</div>
+      ) : products.length === 0 ? (
+        <div className="text-center">Нет товаров</div>
+      ) : (
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard key={product.id} {...product} />
+          ))}
+        </div>
+      )}
+
+      {/* Пагинация */}
+      <div className="pagination">
         <button
           onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          className="px-4 py-2 bg-blue-500 text-white rounded mr-2 disabled:bg-gray-300"
           disabled={page === 1}
         >
           Назад
         </button>
-        <span className="text-xl">Страница {page}</span>
+        <span>Страница {page}</span>
         <button
           onClick={() => setPage((prev) => prev + 1)}
-          className="px-4 py-2 bg-blue-500 text-white rounded ml-2"
+          disabled={page >= totalPages}
         >
-          Вперед
+          Вперёд
         </button>
       </div>
     </div>

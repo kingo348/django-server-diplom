@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* В файле App.css или index.css */
 body {
   font-family: 'Arial', sans-serif;
   background-color: #f7fafc;
@@ -31,8 +30,4 @@ button:hover {
 
 img {
   border-radius: 8px;
-}
-
-.grid {
-  display: grid;
 }

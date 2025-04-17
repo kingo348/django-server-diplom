@@ -16,28 +16,45 @@ from .permissions import IsOwnerOrReadOnly
 #  Товары
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['category', 'gender']
+    queryset = Product.objects.all()
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['price', 'name']
 
     def get_queryset(self):
+
         queryset = Product.objects.all()
-        parent_id = self.request.query_params.get('category_parent')
 
-        if parent_id:
-            # Найдём все подкатегории указанной родительской категории
-            subcategories = Category.objects.filter(parent_id=parent_id).values_list('id', flat=True)
-            # Вернём продукты, у которых категория — одна из этих подкатегорий
-            queryset = queryset.filter(category_id__in=subcategories)
 
-        return queryset
+        selected_category_id = self.request.query_params.get('category')
+        if selected_category_id:
+            try:
+                selected_category_id = int(selected_category_id)
+                category = Category.objects.get(id=selected_category_id)
+
+                if category.parent is None:
+                    subcategories = Category.objects.filter(parent=category).values_list('id', flat=True)
+                    category_ids = list(subcategories) + [category.id]
+                    queryset = queryset.filter(category_id__in=category_ids)
+                else:
+                    queryset = queryset.filter(category_id=category.id)
+            except (Category.DoesNotExist, ValueError):
+                pass
+
+
+        return self.filter_queryset(queryset).order_by('id')
 
 
 #  Категории
 class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.filter(parent=None)  # Показываем только родительские
     serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        parent_id = self.request.query_params.get('parent_id')
+        if parent_id:
+            return Category.objects.filter(parent_id=parent_id)  # Показываем подкатегории
+        return Category.objects.filter(parent=None)  # Показываем только родительские категории
+
 
 
 #  Отзывы
@@ -106,3 +123,8 @@ class AddressListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
+class ProductDetailView(generics.RetrieveAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    lookup_field = 'id'  # Делаем lookup по id товара

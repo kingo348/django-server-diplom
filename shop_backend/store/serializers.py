@@ -11,8 +11,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'parent', 'children']
 
     def get_children(self, obj):
-        children = obj.children.all()
-        return CategorySerializer(children, many=True).data
+        return CategorySerializer(obj.children.all(), many=True).data
 
 
 class ProductSerializer(serializers.ModelSerializer):

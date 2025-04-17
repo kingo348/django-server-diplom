@@ -1,11 +1,10 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import ProductPage from "./pages/ProductPage";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import Cart from "./pages/Cart";
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import Cart from './pages/Cart';
+import ProductPage from './pages/ProductPage';
 
 function App() {
   return (
@@ -23,3 +22,4 @@ function App() {
 }
 
 export default App;
+
