@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Category, Product, Order, OrderItem, Address, Favorite, Review
 from django.contrib.auth.models import User
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
@@ -69,7 +69,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
-        fields = '__all__'
+        fields = ['id', 'user', 'city', 'street', 'postal_code']
+        read_only_fields = ['user']
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -106,3 +107,24 @@ class OrderSerializer(serializers.ModelSerializer):
         order.total = total
         order.save()
         return order
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password']
+        )
+        return user
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username  # <--- добавляем имя
+        return token

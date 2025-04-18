@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions, viewsets, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from .models import Product, Category, Order, OrderItem, Address, Review, Favorite
 from .serializers import (
     ProductSerializer, CategorySerializer, OrderSerializer,
     AddressSerializer, ReviewSerializer, FavoriteSerializer,
+    RegisterSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +14,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
 from .permissions import IsOwnerOrReadOnly
-
+from django.contrib.auth.models import User
+from .serializers import MyTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth.password_validation import validate_password
 #  Товары
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
@@ -57,17 +62,22 @@ class CategoryListView(generics.ListAPIView):
 
 
 
-#  Отзывы
-class ReviewListCreateView(generics.ListCreateAPIView):
+class ReviewListView(generics.ListAPIView):
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         product_id = self.kwargs.get("product_id")
         return Review.objects.filter(product_id=product_id)
 
+# Добавление нового отзыва
+class ReviewCreateView(generics.CreateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
@@ -123,8 +133,64 @@ class AddressListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+class AddressRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Address.objects.all()
+    serializer_class = AddressSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
 class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'id'  # Делаем lookup по id товара
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    user = request.user
+    if request.method == 'GET':
+        return Response({
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        })
+
+    elif request.method == 'PUT':
+        data = request.data
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.email = data.get('email', user.email)
+        user.save()
+        return Response({'detail': 'Профиль обновлён'})
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+
+        if not user.check_password(old_password):
+            return Response({'detail': 'Неверный старый пароль'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_password != confirm_password:
+            return Response({'detail': 'Пароли не совпадают'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_password(new_password, user=user)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'detail': 'Пароль успешно изменён'})
