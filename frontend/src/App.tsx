@@ -7,7 +7,7 @@ import Cart from './pages/Cart';
 import ProductPage from './pages/ProductPage';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
-
+import FavoritesPage from './pages/FavoritesPage';
 
 function App() {
   return (
@@ -27,6 +27,14 @@ function App() {
         />
         <Route path="/cart" element={<Cart />} />
         <Route path="/product/:id" element={<ProductPage />} />
+        <Route 
+          path="/favorites" 
+          element={
+            <PrivateRoute>
+              <FavoritesPage />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </div>
   );

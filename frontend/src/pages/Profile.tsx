@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { getAuthHeader } from '../utils/authHeader';
+import { Link } from 'react-router-dom';
 
 const Profile: React.FC = () => {
   const token = localStorage.getItem('token');
@@ -113,6 +114,7 @@ const Profile: React.FC = () => {
   return (
     <div className="container mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Профиль</h2>
+      <Link to="/favorites" className="text-blue-500 underline">Избранное</Link>
       <input name="first_name" value={user.first_name} onChange={handleChange} placeholder="Имя" className="block border p-2 mb-2" />
       <input name="last_name" value={user.last_name} onChange={handleChange} placeholder="Фамилия" className="block border p-2 mb-2" />
       <input name="email" value={user.email} onChange={handleChange} placeholder="Почта" className="block border p-2 mb-4" />
