@@ -5,7 +5,6 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // эта настройка позволяет заходить напрямую на /login и другие маршруты
     fs: {
       allow: ['.']
     }

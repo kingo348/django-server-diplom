@@ -87,7 +87,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     items = OrderItemSerializer(many=True)
-    address = AddressSerializer()
+    address = serializers.PrimaryKeyRelatedField(queryset=Address.objects.all())
 
     class Meta:
         model = Order
@@ -95,9 +95,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        address_data = validated_data.pop('address')
-        address = Address.objects.create(**address_data, user=validated_data['user'])
-        order = Order.objects.create(address=address, **validated_data)
+        order = Order.objects.create(**validated_data)
         total = 0
         for item_data in items_data:
             product = item_data['product']
@@ -107,6 +105,7 @@ class OrderSerializer(serializers.ModelSerializer):
         order.total = total
         order.save()
         return order
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
