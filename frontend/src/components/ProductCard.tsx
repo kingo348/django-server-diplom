@@ -1,11 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useEffect, useState } from 'react';
-import {
-  getFavorites,
-  addFavorite,
-  removeFavorite,
-} from '../services/favoriteService';
+import { useFavorite } from '../context/FavoriteContext'; 
 import './styles/productCard.css';
 
 type ProductProps = {
@@ -17,20 +12,9 @@ type ProductProps = {
 
 const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
   const { addToCart } = useCart();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { favorites, addToFavorites, removeFromFavorites } = useFavorite(); // 👈 используем контекст
 
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        const favorites = await getFavorites();
-        const found = favorites.some((f: any) => f.product === id);
-        setIsFavorite(found);
-      } catch (err) {
-        console.error('Ошибка при получении избранного', err);
-      }
-    };
-    fetchFavorites();
-  }, [id]);
+  const isFavorite = favorites.some((f) => f.product.id === id); // 👈 проверка
 
   const handleAddToCart = () => {
     addToCart({ productId: id, name, price, quantity: 1 });
@@ -39,11 +23,9 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        await removeFavorite(id);
-        setIsFavorite(false);
+        await removeFromFavorites(id);
       } else {
-        await addFavorite(id);
-        setIsFavorite(true);
+        await addToFavorites(id);
       }
     } catch (err) {
       console.error('Ошибка при обновлении избранного', err);
@@ -68,7 +50,7 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
         <button onClick={handleAddToCart} className="add-to-cart-btn">
           Добавить в корзину
         </button>
-        <button onClick={toggleFavorite} className="text-xl">
+        <button onClick={toggleFavorite} className="text-xl" title="Избранное">
           {isFavorite ? '❤️' : '🤍'}
         </button>
       </div>

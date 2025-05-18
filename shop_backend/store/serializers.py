@@ -53,18 +53,24 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Вы уже оставили отзыв.")
         return data
 
+class ProductShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'image']
+
 class FavoriteSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    product = ProductSerializer(read_only=True)  # ВОТ ЭТО ГЛАВНОЕ
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
+    )
 
     class Meta:
         model = Favorite
-        fields = ['id', 'user', 'product']
+        fields = ['id', 'user', 'product', 'product_id']
 
-    def validate(self, data):
-        user = self.context['request'].user
-        if Favorite.objects.filter(user=user, product=data['product']).exists():
-            raise serializers.ValidationError("Уже в избранном.")
-        return data
 
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
