@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import {
   fetchReviews,
   addReview,
@@ -20,16 +21,31 @@ type Props = {
   userToken: string | null;
 };
 
+type DecodedToken = {
+  user_id: number;
+  username: string;
+};
+
 const ReviewSection: React.FC<Props> = ({ productId, userToken }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState(5);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
 
+  const currentUsername = (() => {
+    if (!userToken) return null;
+    try {
+      const decoded = jwtDecode<DecodedToken>(userToken);
+      return decoded.username;
+    } catch {
+      return null;
+    }
+  })();
+
   const loadReviews = async () => {
     try {
       const data = await fetchReviews(productId);
-      setReviews(Array.isArray(data) ? data : []);
+      setReviews(data);
     } catch (err) {
       console.error('Ошибка загрузки отзывов:', err);
       setReviews([]);
@@ -39,6 +55,10 @@ const ReviewSection: React.FC<Props> = ({ productId, userToken }) => {
   useEffect(() => {
     loadReviews();
   }, [productId]);
+
+  const userOwnReview = useMemo(() => {
+    return reviews.find((r) => r.user === currentUsername);
+  }, [reviews, currentUsername]);
 
   const handleSubmit = async () => {
     if (!userToken) return;
@@ -72,6 +92,8 @@ const ReviewSection: React.FC<Props> = ({ productId, userToken }) => {
     if (!userToken) return;
     await deleteReview(id, userToken);
     setReviews((prev) => prev.filter((r) => r.id !== id));
+    setComment('');
+    setEditingReviewId(null);
   };
 
   const handleEdit = (review: Review) => {
@@ -93,7 +115,7 @@ const ReviewSection: React.FC<Props> = ({ productId, userToken }) => {
               <p className="review-meta">{r.user} — {r.rating}★</p>
               <p className="mb-1">{r.comment}</p>
               <p className="review-date">{new Date(r.created_at).toLocaleString()}</p>
-              {userToken && (
+              {r.user === currentUsername && (
                 <div className="review-actions">
                   <button onClick={() => handleEdit(r)} className="edit-btn">Редактировать</button>
                   <button onClick={() => handleDelete(r.id)} className="delete-btn">Удалить</button>
@@ -104,7 +126,7 @@ const ReviewSection: React.FC<Props> = ({ productId, userToken }) => {
         </ul>
       )}
 
-      {userToken && (
+      {userToken && (!userOwnReview || editingReviewId) && (
         <div className="review-form">
           <h3 className="text-lg font-semibold mb-2">
             {editingReviewId ? 'Редактировать отзыв' : 'Оставить отзыв'}

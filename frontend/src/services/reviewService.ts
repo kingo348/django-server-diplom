@@ -4,7 +4,8 @@ const API = 'http://localhost:8000/api';
 
 export const fetchReviews = async (productId: number) => {
   const response = await axios.get(`${API}/products/${productId}/reviews/`);
-  return response.data;
+  const data = response.data;
+  return Array.isArray(data.results) ? data.results : data;
 };
 
 export const addReview = async (review: any, token: string) => {

@@ -68,7 +68,12 @@ class ReviewListView(generics.ListAPIView):
 
     def get_queryset(self):
         product_id = self.kwargs.get("product_id")
-        return Review.objects.filter(product_id=product_id)
+        return Review.objects.select_related('user').filter(product_id=product_id)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
 # Добавление нового отзыва
 class ReviewCreateView(generics.CreateAPIView):

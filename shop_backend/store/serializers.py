@@ -34,11 +34,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
-
+    user = serializers.SerializerMethodField()
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     class Meta:
         model = Review
         fields = ['id', 'user', 'product', 'rating', 'comment', 'created_at']
+
+    def get_user(self, obj):
+        return str(obj.user.username) if obj.user else ''
 
     def validate(self, data):
         user = self.context['request'].user
@@ -60,7 +63,7 @@ class ProductShortSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    product = ProductSerializer(read_only=True)  # ВОТ ЭТО ГЛАВНОЕ
+    product = ProductSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
         source='product',
