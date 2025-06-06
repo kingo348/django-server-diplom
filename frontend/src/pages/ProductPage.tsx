@@ -4,6 +4,8 @@ import axios from 'axios';
 import ReviewSection from '../components/ReviewSection';
 import { useCart } from '../context/CartContext';
 import { useFavorite } from '../context/FavoriteContext';
+import RecommendedSection from '../components/RecommendedSection';
+import SimilarSection from '../components/SimilarSection';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams();
@@ -71,6 +73,8 @@ const ProductPage: React.FC = () => {
       </div>
 
       <ReviewSection productId={product.id} userToken={token} />
+      <SimilarSection productId={product.id} />
+      <RecommendedSection productId={product.id} />
     </div>
   );
 };

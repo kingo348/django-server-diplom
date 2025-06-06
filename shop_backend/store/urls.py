@@ -6,7 +6,8 @@ from .views import (
     OrderCreateView, OrderListView,
     AddressListCreateView,ReviewDetailView,ProductDetailView,RegisterView,
     ReviewListView, ReviewCreateView, ReviewDetailView,user_profile,
-    MyTokenObtainPairView,ChangePasswordView,AddressRetrieveUpdateDestroyView
+    MyTokenObtainPairView,ChangePasswordView,AddressRetrieveUpdateDestroyView,
+    recommended_products,similar_products
 )
 
 urlpatterns = [
@@ -27,4 +28,6 @@ urlpatterns = [
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('products/<int:product_id>/recommended/', recommended_products, name='recommended-products'),
+    path('products/<int:product_id>/similar/', similar_products, name='similar-products'),
 ]

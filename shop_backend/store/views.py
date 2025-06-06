@@ -199,3 +199,44 @@ class ChangePasswordView(APIView):
         user.save()
 
         return Response({'detail': 'Пароль успешно изменён'})
+
+CATEGORY_RECOMMENDATIONS = {
+    "Футболки": ["Кроссовки", "Джинсы"],
+    "Рубашки": ["Туфли", "Джинсы"],
+    "Платья": ["Туфли", "Сандалии"],
+    "Толстовки": ["Кроссовки", "Джинсы"],
+    "Куртки": ["Ботинки", "Джинсы"],
+    "Лоферы": ["Рубашки"],
+    "Туфли": ["Рубашки", "Платья"],
+    "Шлёпанцы": ["Футболки", "Шорты"],
+    "Ботинки": ["Куртки", "Джинсы"],
+    "Сандалии": ["Платья", "Шорты"],
+    "Джинсы": ["Футболки", "Толстовки"],
+    "Кроссовки": ["Футболки", "Толстовки"],
+}
+
+@api_view(['GET'])
+def recommended_products(request, product_id):
+    try:
+        product = Product.objects.select_related("category").get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({"detail": "Товар не найден"}, status=404)
+
+    current_category_name = product.category.name
+    recommended_categories = CATEGORY_RECOMMENDATIONS.get(current_category_name, [])
+
+    products = Product.objects.filter(category__name__in=recommended_categories).exclude(id=product_id)[:10]
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def similar_products(request, product_id):
+    try:
+        product = Product.objects.get(id=product_id)
+        similar = Product.objects.filter(category=product.category).exclude(id=product_id)[:10]
+        serializer = ProductSerializer(similar, many=True)
+        return Response(serializer.data)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=404)
+
+

@@ -12,9 +12,9 @@ type ProductProps = {
 
 const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
   const { addToCart } = useCart();
-  const { favorites, addToFavorites, removeFromFavorites } = useFavorite(); // 👈 используем контекст
+  const { favorites, addToFavorites, removeFromFavorites } = useFavorite(); 
 
-  const isFavorite = favorites.some((f) => f.product.id === id); // 👈 проверка
+  const isFavorite = favorites.some((f) => f.product.id === id); 
 
   const handleAddToCart = () => {
     addToCart({ productId: id, name, price, quantity: 1 });
