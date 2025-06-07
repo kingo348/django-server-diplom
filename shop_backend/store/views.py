@@ -57,8 +57,8 @@ class CategoryListView(generics.ListAPIView):
     def get_queryset(self):
         parent_id = self.request.query_params.get('parent_id')
         if parent_id:
-            return Category.objects.filter(parent_id=parent_id)  # Показываем подкатегории
-        return Category.objects.filter(parent=None)  # Показываем только родительские категории
+            return Category.objects.filter(parent_id=parent_id).order_by('id')  # Показываем подкатегории
+        return Category.objects.filter(parent=None).order_by('id')  # Показываем только родительские категории
 
 
 
@@ -68,7 +68,7 @@ class ReviewListView(generics.ListAPIView):
 
     def get_queryset(self):
         product_id = self.kwargs.get("product_id")
-        return Review.objects.select_related('user').filter(product_id=product_id)
+        return Review.objects.select_related('user').filter(product_id=product_id).order_by('id')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -99,7 +99,7 @@ class FavoriteListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user)
+        return Favorite.objects.filter(user=self.request.user).order_by('id')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -111,7 +111,7 @@ class FavoriteDeleteView(generics.DestroyAPIView):
     lookup_field = 'product_id'
 
     def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user)
+        return Favorite.objects.filter(user=self.request.user).order_by('id')
 
 
 #  Заказы
@@ -125,7 +125,7 @@ class OrderListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        return Order.objects.filter(user=self.request.user).order_by('id')
 
 
 class AddressListCreateView(generics.ListCreateAPIView):
@@ -133,7 +133,7 @@ class AddressListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Address.objects.filter(user=self.request.user)
+        return Address.objects.filter(user=self.request.user).order_by('id')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
