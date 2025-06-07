@@ -1,5 +1,7 @@
 
 from django.db import models
+
+MODELS_CHAR_FIELD = models.CharField(max_length=200)
 from django.contrib.auth.models import User
 
 
@@ -23,6 +25,9 @@ class Product(models.Model):
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     stock = models.PositiveIntegerField(default=0)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    sizes = models.CharField(max_length=100, blank=True)
+    color = models.CharField(max_length=50, blank=True)
+    brand = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.name
@@ -32,7 +37,7 @@ class Product(models.Model):
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     city = models.CharField(max_length=100)
-    street = models.CharField(max_length=200)
+    street = MODELS_CHAR_FIELD
     postal_code = models.CharField(max_length=20)
 
     def __str__(self):

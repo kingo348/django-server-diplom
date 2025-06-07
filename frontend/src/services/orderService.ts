@@ -7,10 +7,10 @@ export const submitOrder = async (
   ) => {
     const headers = await getAuthHeader();
     const res = await axios.post(
-      'http://localhost:8000/api/orders/',
+      'http://localhost:8000/api/orders/create/',
       {
-        address: addressId,  // просто id, не объект!
-        items,               // массив с product_id и quantity
+        address: addressId,  
+        items,               
       },
       { headers }
     );

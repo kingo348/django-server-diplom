@@ -16,21 +16,28 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True
     )
-    average_rating = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price', 'gender', 'image',
-                  'stock', 'category', 'category_id', 'average_rating']
+                  'stock', 'category', 'category_id', 'average_rating','sizes',
+                  'color', 'reviews_count', 'brand'
+                  ]
 
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
         if reviews:
             return round(sum(r.rating for r in reviews) / len(reviews), 1)
         return None
+
+    def get_reviews_count(self, obj):
+        return obj.reviews.count()
 
 
 class ReviewSerializer(serializers.ModelSerializer):

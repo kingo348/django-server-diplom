@@ -5,12 +5,14 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
+  size: string;
+  color: string;
 };
 
 type CartContextType = {
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: number) => void;
+  removeFromCart: (productId: number, size: string, color: string) => void;
   clearCart: () => void;
 };
 
@@ -36,18 +38,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find(p => p.productId === item.productId);
+      const existing = prev.find(
+        p => p.productId === item.productId &&
+        p.size === item.size &&
+        p.color === item.color
+      );
       if (existing) {
         return prev.map(p =>
-          p.productId === item.productId ? { ...p, quantity: p.quantity + item.quantity } : p
+          p.productId === item.productId &&
+          p.size === item.size &&
+          p.color === item.color
+          ? { ...p, quantity: p.quantity + item.quantity } : p
         );
       }
       return [...prev, item];
     });
   };
 
-  const removeFromCart = (productId: number) => {
-    setCart((prev) => prev.filter(p => p.productId !== productId));
+  const removeFromCart = (productId: number, size: string, color: string) => {
+    setCart((prev) =>
+      prev.filter(p =>
+        !(p.productId === productId && p.size === size && p.color === color)
+      )
+    )
   };
 
   const clearCart = () => setCart([]);

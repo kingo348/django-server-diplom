@@ -63,12 +63,17 @@ const Cart: React.FC = () => {
       ) : (
         <div>
           {cart.map(item => (
-            <div key={item.productId} className="flex justify-between mb-2">
-              <span>{item.name} × {item.quantity}</span>
+            <div key={`${item.productId}-${item.size}-${item.color}`} className="flex justify-between mb-2">
+              <span>
+                {item.name}
+                {item.size && ` / ${item.size}`}
+                {item.color && ` / ${item.color}`}
+                × {item.quantity}
+              </span>
               <span>{item.price * item.quantity} ₽</span>
               <button
                 className="text-red-500 ml-4"
-                onClick={() => removeFromCart(item.productId)}
+                onClick={() => removeFromCart(item.productId, item.size, item.color)}
               >
                 Удалить
               </button>

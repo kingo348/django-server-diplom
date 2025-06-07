@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 import { useFavorite } from '../context/FavoriteContext'; 
 import './styles/productCard.css';
 
@@ -11,14 +10,10 @@ type ProductProps = {
 };
 
 const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
-  const { addToCart } = useCart();
   const { favorites, addToFavorites, removeFromFavorites } = useFavorite(); 
 
   const isFavorite = favorites.some((f) => f.product.id === id); 
 
-  const handleAddToCart = () => {
-    addToCart({ productId: id, name, price, quantity: 1 });
-  };
 
   const toggleFavorite = async () => {
     try {
@@ -47,9 +42,11 @@ const ProductCard: React.FC<ProductProps> = ({ id, name, price, image }) => {
       </Link>
 
       <div className="flex gap-2 mt-2">
-        <button onClick={handleAddToCart} className="add-to-cart-btn">
-          Добавить в корзину
-        </button>
+        <Link to={`/product/${id}`}>
+          <button className="add-to-cart-btn w-full">
+            Подробнее
+          </button>
+        </Link>
         <button onClick={toggleFavorite} className="text-xl" title="Избранное">
           {isFavorite ? '❤️' : '🤍'}
         </button>
