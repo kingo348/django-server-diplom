@@ -17,7 +17,7 @@ from .permissions import IsOwnerOrReadOnly
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
-from .search_engine import custom_sort,binary_search_id,substring_search,auto_search,multi_field_multi_word_search,custom_sort,advanced_filter
+from .search_engine import custom_sort,binary_search_id,substring_search,auto_search,multi_field_multi_word_search,advanced_filter
 from rest_framework.pagination import PageNumberPagination
 #  Товары
 class ProductListView(generics.ListAPIView):
@@ -238,88 +238,13 @@ def similar_products(request, product_id):
         return Response({'error': 'Product not found'}, status=404)
 
 
-@api_view(["GET"])
-def binary_search_id_view(request):
-    q = request.GET.get("q")
-    if not q or not q.isdigit():
-        return Response({"error": "Введите ID (артикул) товара"}, status=400)
 
-    product = binary_search_by_id(list(Product.objects.all()), int(q))
-    if product:
-        return Response(ProductSerializer(product).data)
-    return Response({"message": "Товар не найден"}, status=404)
-
-
-@api_view(["GET"])
-def substring_search_view(request):
-    query = request.GET.get("q")
-    if not query:
-        return Response({"error": "Параметр q обязателен"}, status=400)
-
-    results = substring_search(query)
-    serializer = ProductSerializer(results, many=True)
-    return Response(serializer.data)
 
 class CustomPagination(PageNumberPagination):
     page_size = 10  # или сколько нужно
     page_size_query_param = 'page_size'
 
-class AutoSearchView(APIView):
-    def get(self, request):
-        query = request.GET.get('q', '')
-        if not query:
-            return Response({"results": [], "count": 0, "next": None, "previous": None})
 
-        results = auto_search(query)
-
-        paginator = CustomPagination()
-        page = paginator.paginate_queryset(results, request)
-        serializer = ProductSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
-class ManualSortProductView(generics.ListAPIView):
-    serializer_class = ProductSerializer
-    filter_backends = []
-
-    def get_queryset(self):
-        ordering = self.request.query_params.get('ordering', 'price_asc')
-        products = Product.objects.all()
-        sorted_products = custom_sort(list(products), ordering)
-        return sorted_products
-
-
-class AdvancedSearchView(generics.ListAPIView):
-    serializer_class = ProductSerializer
-    filter_backends = []  # отключаем встроенные фильтры
-
-    def get_queryset(self):
-        request = self.request
-
-        # Забираем параметры
-        category_id = request.query_params.get("category")
-        gender = request.query_params.get("gender")
-        price_min = request.query_params.get("price_min")
-        price_max = request.query_params.get("price_max")
-
-        # Приводим к нужным типам
-        try:
-            category_id = int(category_id) if category_id else None
-        except ValueError:
-            category_id = None
-
-        try:
-            price_min = float(price_min) if price_min else None
-        except ValueError:
-            price_min = None
-
-        try:
-            price_max = float(price_max) if price_max else None
-        except ValueError:
-            price_max = None
-
-        # Вызываем кастомный метод фильтрации
-        results = advanced_search(category_id, gender, price_min, price_max)
-        return results
 
 class AllSearchView(APIView):
     filter_backends = []  # отключаем DRF фильтры
