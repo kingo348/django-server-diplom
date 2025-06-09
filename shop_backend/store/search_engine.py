@@ -1,28 +1,19 @@
 from typing import List, Callable, Any
-from store.models import Product
+from store.models import Product,Category
+from django.db.models import QuerySet
 
 
 # 🔹 Ручная сортировка по полю
 def custom_sort(products: List[Product], ordering: str) -> List[Product]:
-    key = 'price'
-    reverse = False
-
-    if ordering == 'price_desc':
-        key = 'price'
-        reverse = True
+    if ordering == 'price_asc':
+        return sorted(products, key=lambda x: x.price or 0)
+    elif ordering == 'price_desc':
+        return sorted(products, key=lambda x: -(x.price or 0))
     elif ordering == 'name_asc':
-        key = 'name'
-        reverse = False
+        return sorted(products, key=lambda x: (x.name or '').lower())
     elif ordering == 'name_desc':
-        key = 'name'
-        reverse = True
-    else:
-        ordering = 'price_asc'
-
-    try:
-        return sorted(products, key=lambda x: getattr(x, key), reverse=reverse)
-    except AttributeError:
-        return products
+        return sorted(products, key=lambda x: (x.name or '').lower(), reverse=True)
+    return products
 
 
 def binary_search_id(query: str) -> List[Product]:
@@ -68,5 +59,37 @@ def auto_search(query: str) -> List[Product]:
         return multi_field_multi_word_search(query)
     else:
         return substring_search(query)
+
+def advanced_filter(
+    products: QuerySet,
+    category_id: int = None,
+    gender: str = None,
+    price_min: float = None,
+    price_max: float = None
+):
+    # Категория
+    if category_id:
+        try:
+            category = Category.objects.get(id=category_id)
+            if category.parent is None:
+                subcategories = Category.objects.filter(parent=category).values_list('id', flat=True)
+                category_ids = list(subcategories) + [category.id]
+                products = products.filter(category_id__in=category_ids)
+            else:
+                products = products.filter(category=category)
+        except Category.DoesNotExist:
+            pass
+
+    # Пол
+    if gender:
+        products = products.filter(gender__iexact=gender)
+
+    # Цена
+    if price_min is not None:
+        products = products.filter(price__gte=price_min)
+    if price_max is not None:
+        products = products.filter(price__lte=price_max)
+
+    return products
 
 

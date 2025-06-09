@@ -17,7 +17,7 @@ from .permissions import IsOwnerOrReadOnly
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
-from .search_engine import custom_sort,binary_search_id,substring_search,auto_search,multi_field_multi_word_search,custom_sort
+from .search_engine import custom_sort,binary_search_id,substring_search,auto_search,multi_field_multi_word_search,custom_sort,advanced_filter
 from rest_framework.pagination import PageNumberPagination
 #  Товары
 class ProductListView(generics.ListAPIView):
@@ -279,8 +279,6 @@ class AutoSearchView(APIView):
 
 class ManualSortProductView(generics.ListAPIView):
     serializer_class = ProductSerializer
-
-
     filter_backends = []
 
     def get_queryset(self):
@@ -288,3 +286,84 @@ class ManualSortProductView(generics.ListAPIView):
         products = Product.objects.all()
         sorted_products = custom_sort(list(products), ordering)
         return sorted_products
+
+
+class AdvancedSearchView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    filter_backends = []  # отключаем встроенные фильтры
+
+    def get_queryset(self):
+        request = self.request
+
+        # Забираем параметры
+        category_id = request.query_params.get("category")
+        gender = request.query_params.get("gender")
+        price_min = request.query_params.get("price_min")
+        price_max = request.query_params.get("price_max")
+
+        # Приводим к нужным типам
+        try:
+            category_id = int(category_id) if category_id else None
+        except ValueError:
+            category_id = None
+
+        try:
+            price_min = float(price_min) if price_min else None
+        except ValueError:
+            price_min = None
+
+        try:
+            price_max = float(price_max) if price_max else None
+        except ValueError:
+            price_max = None
+
+        # Вызываем кастомный метод фильтрации
+        results = advanced_search(category_id, gender, price_min, price_max)
+        return results
+
+class AllSearchView(APIView):
+    filter_backends = []  # отключаем DRF фильтры
+
+    def get(self, request):
+        query = request.GET.get('query', '').strip()
+        ordering = request.GET.get('ordering', 'price_asc')
+        category_id = request.GET.get('category')
+        gender = request.GET.get('gender')
+        price_min = request.GET.get('price_min')
+        price_max = request.GET.get('price_max')
+
+        # Приведение типов
+        try:
+            category_id = int(category_id) if category_id else None
+        except ValueError:
+            category_id = None
+
+        try:
+            price_min = float(price_min) if price_min else None
+        except ValueError:
+            price_min = None
+
+        try:
+            price_max = float(price_max) if price_max else None
+        except ValueError:
+            price_max = None
+
+        # Поиск
+        if query:
+            products = auto_search(query)  # возвращает list
+            product_ids = [p.id for p in products]
+            products = Product.objects.filter(id__in=product_ids)
+        else:
+            products = Product.objects.all()
+
+        # Фильтрация
+        products = advanced_filter(products, category_id, gender, price_min, price_max)
+
+        # Сортировка
+        products = custom_sort(list(products), ordering)
+
+        # Пагинация
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(products, request)
+        serializer = ProductSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)

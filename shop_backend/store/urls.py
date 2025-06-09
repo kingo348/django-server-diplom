@@ -8,7 +8,7 @@ from .views import (
     ReviewListView, ReviewCreateView, ReviewDetailView,user_profile,
     MyTokenObtainPairView,ChangePasswordView,AddressRetrieveUpdateDestroyView,
     recommended_products,similar_products,binary_search_id_view,substring_search_view,
-    AutoSearchView,ManualSortProductView
+    AutoSearchView,ManualSortProductView,AdvancedSearchView,AllSearchView
 )
 
 urlpatterns = [
@@ -35,4 +35,6 @@ urlpatterns = [
     path("search/substring/", substring_search_view),
     path('search/auto/', AutoSearchView.as_view(), name='auto-search'),
     path('products/manual-sort/', ManualSortProductView.as_view(), name='manual-sort-products'),
+    path("search/advanced/", AdvancedSearchView.as_view(), name="advanced-search"),
+    path("search/all/", AllSearchView.as_view(), name="all-search"),
 ]

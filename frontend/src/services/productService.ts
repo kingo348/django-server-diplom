@@ -12,16 +12,27 @@ export const fetchRecommendedProducts = async (productId: number) => {
   return res.data;
 };
 
-export const searchProductsAuto = async (searchTerm: string, page: number = 1) => {
-  const res = await axios.get(`http://localhost:8000/api/search/auto/`, {
-    params: { q: searchTerm, page }
-  });
-  return res.data; // теперь вернёт объект с results, count и т.д.
-};
+// 👇 Единый универсальный поиск
+export const fetchAllSearch = async (
+  query: string,
+  ordering: string,
+  gender: string,
+  priceMin: number | undefined,
+  priceMax: number | undefined,
+  categoryId: number | null,
+  page: number
+) => {
+  const params: any = {
+    query,
+    ordering,
+    page,
+  };
 
-export const fetchManualSortedProducts = async (ordering: string, page: number = 1) => {
-  const res = await axios.get(`http://localhost:8000/api/products/manual-sort/`, {
-    params: { ordering, page },
-  });
-  return res.data; 
+  if (gender) params.gender = gender;
+  if (priceMin !== undefined) params.price_min = priceMin;
+  if (priceMax !== undefined) params.price_max = priceMax;
+  if (categoryId !== null) params.category = categoryId;
+
+  const res = await axios.get(`${API}/search/all/`, { params });
+  return res.data;
 };
