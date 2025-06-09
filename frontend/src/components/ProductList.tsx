@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCard from './ProductCard';
+import { searchProductsAuto } from '../services/productService';
+import { fetchManualSortedProducts } from '../services/productService';
 import './styles/productList.css';
 
 type ProductListProps = {
@@ -21,22 +23,24 @@ const ProductList: React.FC<ProductListProps> = ({ selectedCategory, page, setPa
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const params: any = {
-        page,
-        ordering: orderBy,
-      };
-      if (selectedCategory !== null) params.category = selectedCategory;
-      if (searchTerm.trim() !== '') params.search = searchTerm;
-
-      const response = await axios.get('http://localhost:8000/api/products', { params });
-      setProducts(response.data.results);
-      setTotalCount(response.data.count);
+      if (searchTerm.trim() !== "") {
+        // тут оставляем auto-поиск
+        const result = await searchProductsAuto(searchTerm);
+        setProducts(result.results); // если paginated
+        setTotalCount(result.count);
+      } else {
+        // 👇 ручная сортировка
+        const result = await fetchManualSortedProducts(orderBy,page);
+        setProducts(result.results);
+        setTotalCount(result.count);
+      }
     } catch (error) {
       console.error('Ошибка при загрузке товаров:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchProducts();
@@ -46,7 +50,6 @@ const ProductList: React.FC<ProductListProps> = ({ selectedCategory, page, setPa
 
   return (
     <div className="product-list">
-      {/* Поиск и сортировка */}
       <div className="filters">
         <input
           type="text"
@@ -61,10 +64,10 @@ const ProductList: React.FC<ProductListProps> = ({ selectedCategory, page, setPa
           value={orderBy}
           onChange={(e) => setOrderBy(e.target.value)}
         >
-          <option value="price">Сначала дешёвые</option>
-          <option value="-price">Сначала дорогие</option>
-          <option value="name">По названию A-Z</option>
-          <option value="-name">По названию Z-A</option>
+          <option value="price_asc">Сначала дешёвые</option>
+          <option value="price_desc">Сначала дорогие</option>
+          <option value="name_asc">По названию A-Z</option>
+          <option value="name_desc">По названию Z-A</option>
         </select>
       </div>
 

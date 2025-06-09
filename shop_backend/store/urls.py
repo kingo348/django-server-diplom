@@ -7,7 +7,8 @@ from .views import (
     AddressListCreateView,ReviewDetailView,ProductDetailView,RegisterView,
     ReviewListView, ReviewCreateView, ReviewDetailView,user_profile,
     MyTokenObtainPairView,ChangePasswordView,AddressRetrieveUpdateDestroyView,
-    recommended_products,similar_products
+    recommended_products,similar_products,binary_search_id_view,substring_search_view,
+    AutoSearchView,ManualSortProductView
 )
 
 urlpatterns = [
@@ -30,4 +31,8 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('products/<int:product_id>/recommended/', recommended_products, name='recommended-products'),
     path('products/<int:product_id>/similar/', similar_products, name='similar-products'),
+    path("search/binary-id/", binary_search_id_view),
+    path("search/substring/", substring_search_view),
+    path('search/auto/', AutoSearchView.as_view(), name='auto-search'),
+    path('products/manual-sort/', ManualSortProductView.as_view(), name='manual-sort-products'),
 ]

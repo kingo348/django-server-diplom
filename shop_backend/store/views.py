@@ -6,7 +6,7 @@ from .models import Product, Category, Order, OrderItem, Address, Review, Favori
 from .serializers import (
     ProductSerializer, CategorySerializer, OrderSerializer,
     AddressSerializer, ReviewSerializer, FavoriteSerializer,
-    RegisterSerializer,
+    RegisterSerializer,MyTokenObtainPairSerializer,
 )
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -15,9 +15,10 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
 from .permissions import IsOwnerOrReadOnly
 from django.contrib.auth.models import User
-from .serializers import MyTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
+from .search_engine import custom_sort,binary_search_id,substring_search,auto_search,multi_field_multi_word_search,custom_sort
+from rest_framework.pagination import PageNumberPagination
 #  Товары
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductSerializer
@@ -27,10 +28,7 @@ class ProductListView(generics.ListAPIView):
     ordering_fields = ['price', 'name']
 
     def get_queryset(self):
-
         queryset = Product.objects.all()
-
-
         selected_category_id = self.request.query_params.get('category')
         if selected_category_id:
             try:
@@ -240,3 +238,53 @@ def similar_products(request, product_id):
         return Response({'error': 'Product not found'}, status=404)
 
 
+@api_view(["GET"])
+def binary_search_id_view(request):
+    q = request.GET.get("q")
+    if not q or not q.isdigit():
+        return Response({"error": "Введите ID (артикул) товара"}, status=400)
+
+    product = binary_search_by_id(list(Product.objects.all()), int(q))
+    if product:
+        return Response(ProductSerializer(product).data)
+    return Response({"message": "Товар не найден"}, status=404)
+
+
+@api_view(["GET"])
+def substring_search_view(request):
+    query = request.GET.get("q")
+    if not query:
+        return Response({"error": "Параметр q обязателен"}, status=400)
+
+    results = substring_search(query)
+    serializer = ProductSerializer(results, many=True)
+    return Response(serializer.data)
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10  # или сколько нужно
+    page_size_query_param = 'page_size'
+
+class AutoSearchView(APIView):
+    def get(self, request):
+        query = request.GET.get('q', '')
+        if not query:
+            return Response({"results": [], "count": 0, "next": None, "previous": None})
+
+        results = auto_search(query)
+
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(results, request)
+        serializer = ProductSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+class ManualSortProductView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+
+
+    filter_backends = []
+
+    def get_queryset(self):
+        ordering = self.request.query_params.get('ordering', 'price_asc')
+        products = Product.objects.all()
+        sorted_products = custom_sort(list(products), ordering)
+        return sorted_products

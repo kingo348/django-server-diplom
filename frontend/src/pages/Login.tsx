@@ -12,10 +12,10 @@ const Login: React.FC = () => {
         username,
         password,
       });
-      localStorage.setItem('token', res.data.access); // сохраняем токен
+      localStorage.setItem('token', res.data.access); 
       localStorage.setItem('access', res.data.access);
       localStorage.setItem('refresh', res.data.refresh);
-      window.location.href = '/'; // редирект
+      window.location.href = '/'; 
     } catch (err) {
       setError('Неверные учетные данные');
     }

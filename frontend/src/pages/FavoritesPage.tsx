@@ -19,7 +19,7 @@ const FavoritesPage: React.FC = () => {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const data = await getFavorites(); // уже массив
+        const data = await getFavorites(); 
         setFavorites(data);
       } catch (err) {
         console.error('Ошибка при получении избранного', err);

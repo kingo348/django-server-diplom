@@ -1,6 +1,8 @@
 
 from django.db import models
 
+FIELD = models.CharField(max_length=50, blank=True)
+
 MODELS_CHAR_FIELD = models.CharField(max_length=200)
 from django.contrib.auth.models import User
 
@@ -18,7 +20,7 @@ class Category(models.Model):
 
 # Основной товар
 class Product(models.Model):
-    name = models.CharField(max_length=255, db_index=True)  # индекс для поиска
+    name = models.CharField(max_length=255, db_index=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     gender = models.CharField(max_length=10, choices=[("Мужской", "Мужской"), ("Женский", "Женский")])
