@@ -17,11 +17,29 @@ def custom_sort(products: List[Product], ordering: str) -> List[Product]:
 
 
 def binary_search_id(query: str) -> List[Product]:
-    print("Выполнен бинарный поиск по ID")
-    target_id = int(query)
-    for p in Product.objects.all():
-        if p.id == target_id:
-            return [p]
+    print("Выполнен бинарный поиск по ID (ручной)")
+    try:
+        target_id = int(query)
+    except ValueError:
+        return []
+
+    # Получаем отсортированные товары по id
+    products = list(Product.objects.all().order_by("id"))
+
+    left = 0
+    right = len(products) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+        current_id = products[mid].id
+
+        if current_id == target_id:
+            return [products[mid]]
+        elif current_id < target_id:
+            left = mid + 1
+        else:
+            right = mid - 1
+
     return []
 
 

@@ -18,7 +18,7 @@ class Category(models.Model):
 
 
 
-# Основной товар
+
 class Product(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField()
@@ -35,7 +35,7 @@ class Product(models.Model):
         return self.name
 
 
-# Адреса пользователя (могут быть разные)
+
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     city = models.CharField(max_length=100)
@@ -46,7 +46,7 @@ class Address(models.Model):
         return f'{self.city}, {self.street}'
 
 
-# Заказ
+
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True)
@@ -58,7 +58,6 @@ class Order(models.Model):
         return f'Order #{self.id} от {self.user.username}'
 
 
-# Продукты внутри заказа
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -72,7 +71,7 @@ class Favorite(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
 
     class Meta:
-        unique_together = ('user', 'product')  # Чтобы нельзя было добавить дважды
+        unique_together = ('user', 'product')
 
     def __str__(self):
         return f'{self.user.username} → {self.product.name}'

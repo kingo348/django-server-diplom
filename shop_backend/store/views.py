@@ -275,7 +275,7 @@ class AllSearchView(APIView):
 
         # Поиск
         if query:
-            products = auto_search(query)  # возвращает list
+            products = auto_search(query)
             product_ids = [p.id for p in products]
             products = Product.objects.filter(id__in=product_ids)
         else:
