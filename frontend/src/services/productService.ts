@@ -12,7 +12,7 @@ export const fetchRecommendedProducts = async (productId: number) => {
   return res.data;
 };
 
-// 👇 Единый универсальный поиск
+
 export const fetchAllSearch = async (
   query: string,
   ordering: string,

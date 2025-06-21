@@ -54,7 +54,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         product = data['product']
 
-        # Если это обновление, исключаем текущий объект
+
         qs = Review.objects.filter(user=user, product=product)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
@@ -141,5 +141,5 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['username'] = user.username  # <--- добавляем имя
+        token['username'] = user.username
         return token

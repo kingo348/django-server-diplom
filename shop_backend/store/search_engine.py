@@ -1,9 +1,19 @@
 from typing import List, Callable, Any
 from store.models import Product,Category
 from django.db.models import QuerySet
+import time
+import nltk
+from django.db.models import Q
+from django.contrib.postgres.search import TrigramSimilarity, SearchVector, SearchQuery
+from nltk.stem.snowball import SnowballStemmer
+from nltk.tokenize import word_tokenize
+nltk.download('punkt')
+stemmer = SnowballStemmer("russian")
 
+def stem_text(text: str) -> list[str]:
+    tokens = word_tokenize(text.lower())
+    return [stemmer.stem(token) for token in tokens if token.isalpha()]
 
-# 🔹 Ручная сортировка по полю
 def custom_sort(products: List[Product], ordering: str) -> List[Product]:
     if ordering == 'price_asc':
         return sorted(products, key=lambda x: x.price or 0)
@@ -17,13 +27,12 @@ def custom_sort(products: List[Product], ordering: str) -> List[Product]:
 
 
 def binary_search_id(query: str) -> List[Product]:
-    print("Выполнен бинарный поиск по ID (ручной)")
+    print("Выполнен бинарный поиск по ID")
     try:
         target_id = int(query)
     except ValueError:
         return []
 
-    # Получаем отсортированные товары по id
     products = list(Product.objects.all().order_by("id"))
 
     left = 0
@@ -43,26 +52,30 @@ def binary_search_id(query: str) -> List[Product]:
     return []
 
 
-def substring_search(query: str) -> List[Product]:
-    print("Выполнен подстроковый поиск (одиночное слово)")
-    results = []
-    query = query.lower()
-    for p in Product.objects.all():
-        combined = f"{(p.name or '').lower()} {(p.description or '').lower()} {(p.brand or '').lower()} {(p.color or '').lower()}"
-        if query in combined:
-            results.append(p)
-    return results
+def substring_search(query: str) -> list[Product]:
+    print("Выполнен подстроковый поиск (TrigramSimilarity + GIN + fallback + морфология)")
+
+    stemmed_query = " ".join(stem_text(query))
+
+    return list(
+        Product.objects.annotate(
+            sim_plain=TrigramSimilarity('search_text', query),
+            sim_stemmed=TrigramSimilarity('stemmed_text', stemmed_query),
+        ).filter(
+            Q(sim_plain__gt=0.1) |
+            Q(search_text__icontains=query) |
+            Q(sim_stemmed__gt=0.1) |
+            Q(stemmed_text__icontains=stemmed_query)
+        ).order_by('-sim_stemmed', '-sim_plain')
+    )
+
+
 
 
 def multi_field_multi_word_search(query: str) -> List[Product]:
-    print("Выполнен мультипоиск по нескольким словам и полям")
-    words = query.lower().split()
-    results = []
-    for p in Product.objects.all():
-        combined = f"{(p.name or '').lower()} {(p.description or '').lower()} {(p.brand or '').lower()} {(p.color or '').lower()}"
-        if all(word in combined for word in words):
-            results.append(p)
-    return results
+    print("Выполнен мультисловный поиск (PostgreSQL full-text с индексом)")
+    search_query = SearchQuery(query)
+    return list(Product.objects.filter(search_vector=search_query))
 
 
 def auto_search(query: str) -> List[Product]:
@@ -85,7 +98,6 @@ def advanced_filter(
     price_min: float = None,
     price_max: float = None
 ):
-    # Категория
     if category_id:
         try:
             category = Category.objects.get(id=category_id)
@@ -97,17 +109,12 @@ def advanced_filter(
                 products = products.filter(category=category)
         except Category.DoesNotExist:
             pass
-
-    # Пол
     if gender:
         products = products.filter(gender__iexact=gender)
-
-    # Цена
     if price_min is not None:
         products = products.filter(price__gte=price_min)
     if price_max is not None:
         products = products.filter(price__lte=price_max)
-
     return products
 
 

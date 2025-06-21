@@ -55,9 +55,8 @@ class CategoryListView(generics.ListAPIView):
     def get_queryset(self):
         parent_id = self.request.query_params.get('parent_id')
         if parent_id:
-            return Category.objects.filter(parent_id=parent_id).order_by('id')  # Показываем подкатегории
-        return Category.objects.filter(parent=None).order_by('id')  # Показываем только родительские категории
-
+            return Category.objects.filter(parent_id=parent_id).order_by('id')
+        return Category.objects.filter(parent=None).order_by('id')
 
 
 class ReviewListView(generics.ListAPIView):
@@ -73,14 +72,12 @@ class ReviewListView(generics.ListAPIView):
         context.update({"request": self.request})
         return context
 
-# Добавление нового отзыва
 class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
@@ -144,7 +141,7 @@ class AddressRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    lookup_field = 'id'  # Делаем lookup по id товара
+    lookup_field = 'id'
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -247,7 +244,7 @@ class CustomPagination(PageNumberPagination):
 
 
 class AllSearchView(APIView):
-    filter_backends = []  # отключаем DRF фильтры
+    filter_backends = []
 
     def get(self, request):
         query = request.GET.get('query', '').strip()
@@ -256,38 +253,26 @@ class AllSearchView(APIView):
         gender = request.GET.get('gender')
         price_min = request.GET.get('price_min')
         price_max = request.GET.get('price_max')
-
-        # Приведение типов
         try:
             category_id = int(category_id) if category_id else None
         except ValueError:
             category_id = None
-
         try:
             price_min = float(price_min) if price_min else None
         except ValueError:
             price_min = None
-
         try:
             price_max = float(price_max) if price_max else None
         except ValueError:
             price_max = None
-
-        # Поиск
         if query:
             products = auto_search(query)
             product_ids = [p.id for p in products]
             products = Product.objects.filter(id__in=product_ids)
         else:
             products = Product.objects.all()
-
-        # Фильтрация
         products = advanced_filter(products, category_id, gender, price_min, price_max)
-
-        # Сортировка
         products = custom_sort(list(products), ordering)
-
-        # Пагинация
         paginator = CustomPagination()
         page = paginator.paginate_queryset(products, request)
         serializer = ProductSerializer(page, many=True)
